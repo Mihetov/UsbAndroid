@@ -122,49 +122,27 @@ void UsbScanner::sendTestPacket(int row)
     }
 
 #ifdef Q_OS_ANDROID
-    auto &device = m_devices[row];
-    QJniObject activity = QNativeInterface::QAndroidApplication::context();
-    QJniObject usbManager = activity.callObjectMethod("getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", QJniObject::fromString("usb").object<jstring>());
-    if (!usbManager.callMethod<jboolean>("hasPermission", "(Landroid/hardware/usb/UsbDevice;)Z", device.javaDevice.object())) {
-        setStatus(QStringLiteral("Нет USB permission для %1. Разрешите доступ и повторите.").arg(device.deviceName));
-        return;
-    }
-
-    QJniObject connection = usbManager.callObjectMethod("openDevice", "(Landroid/hardware/usb/UsbDevice;)Landroid/hardware/usb/UsbDeviceConnection;", device.javaDevice.object());
-    if (!connection.isValid()) {
-        setStatus(QStringLiteral("Не удалось открыть устройство %1.").arg(device.deviceName));
-        return;
-    }
-
-    QJniObject outEndpoint;
-    QJniObject outInterface;
-    for (int i = 0; i < device.javaDevice.callMethod<jint>("getInterfaceCount", "()I") && !outEndpoint.isValid(); ++i) {
-        QJniObject iface = device.javaDevice.callObjectMethod("getInterface", "(I)Landroid/hardware/usb/UsbInterface;", i);
-        for (int e = 0; e < iface.callMethod<jint>("getEndpointCount", "()I"); ++e) {
-            QJniObject ep = iface.callObjectMethod("getEndpoint", "(I)Landroid/hardware/usb/UsbEndpoint;", e);
-            if (ep.callMethod<jint>("getDirection", "()I") == UsbDirOut && ep.callMethod<jint>("getType", "()I") == UsbEndpointXferBulk) {
-                outEndpoint = ep;
-                outInterface = iface;
-                break;
-            }
-        }
-    }
-    if (!outEndpoint.isValid() || !connection.callMethod<jboolean>("claimInterface", "(Landroid/hardware/usb/UsbInterface;Z)Z", outInterface.object(), true)) {
-        setStatus(QStringLiteral("Bulk OUT endpoint не найден или interface не занят."));
-        connection.callMethod<void>("close", "()V");
-        return;
-    }
-
+    const auto &device = m_devices.at(row);
     const QByteArray packet = makeTestPacket();
+
     QJniEnvironment env;
     jbyteArray bytes = env->NewByteArray(packet.size());
     env->SetByteArrayRegion(bytes, 0, packet.size(), reinterpret_cast<const jbyte *>(packet.constData()));
-    const int sent = connection.callMethod<jint>("bulkTransfer", "(Landroid/hardware/usb/UsbEndpoint;[BII)I", outEndpoint.object(), bytes, packet.size(), 1000);
+
+    const int sent = QJniObject::callStaticMethod<jint>(
+        "org/qtproject/example/usbandroid/UsbSerialBridge",
+        "write",
+        "(Landroid/content/Context;Ljava/lang/String;[BI)I",
+        QNativeInterface::QAndroidApplication::context().object(),
+        QJniObject::fromString(device.deviceName).object<jstring>(),
+        bytes,
+        9600);
     env->DeleteLocalRef(bytes);
-    connection.callMethod<jboolean>("releaseInterface", "(Landroid/hardware/usb/UsbInterface;)Z", outInterface.object());
-    connection.callMethod<void>("close", "()V");
-    setStatus(sent == packet.size() ? QStringLiteral("Отправлен тестовый Modbus RTU пакет: %1 байт.").arg(sent)
-                                    : QStringLiteral("Ошибка отправки Modbus RTU пакета, результат: %1.").arg(sent));
+
+    const QString packetHex = QString::fromLatin1(packet.toHex(' ').toUpper());
+    setStatus(sent == packet.size()
+                  ? QStringLiteral("Отправлен Modbus RTU пакет %1 через usb-serial-for-android: %2 байт.").arg(packetHex).arg(sent)
+                  : QStringLiteral("Ошибка отправки Modbus RTU пакета %1 через usb-serial-for-android, код: %2.").arg(packetHex).arg(sent));
 #else
     setStatus(QStringLiteral("Отправка доступна только в Android сборке."));
 #endif

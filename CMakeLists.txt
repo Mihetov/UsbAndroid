@@ -22,9 +22,9 @@ qt_add_qml_module(appUsbAndroid
         src/Main.qml
 )
 
-# set_target_properties(appUsbAndroid PROPERTIES
-#     QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
-# )
+set_target_properties(appUsbAndroid PROPERTIES
+    QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android_backup"
+)
 
 target_link_libraries(appUsbAndroid
     PRIVATE Qt6::Core Qt6::Quick
