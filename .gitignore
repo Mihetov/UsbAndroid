@@ -1,0 +1,65 @@
+# ====================================================================
+# Кроссплатформенный .gitignore для Qt/C++ + Android (CMake & Gradle)
+# ====================================================================
+
+# --- Временные файлы операционных систем ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Локальные настройки IDE Qt Creator ---
+.qtcreator/
+*.user
+*.user.*
+*.creator
+*.files
+*.includes
+*.config
+*.kdev4
+
+# --- Папки сборки и кэш компиляции (CMake / Ninja / Make) ---
+build/
+build-*/
+CMakeCache.txt
+CMakeFiles/
+CMakeSettings.json
+cmake_install.cmake
+Makefile
+targets/
+.cmake/
+
+# --- Временные файлы C++ компиляторов ---
+*.o
+*.obj
+*.gch
+*.pdb
+*.ilk
+*.idb
+
+# --- Бинарники, библиотеки и исполняемые файлы ---
+# ВНИМАНИЕ: Если ты хочешь хранить ПРЕДКОМПИЛИРОВАННЫЕ библиотеки (.dll, .so) 
+# для рабочего проекта, раскомментируй нужные строки или закидывай их принудительно.
+*.exe
+*.out
+*.app
+# *.so     # Убери решетку, если не хочешь пушить .so
+# *.dll    # Убери решетку, если не хочешь пушить .dll
+# *.aar    # Убери решетку, если не хочешь пушить .aar
+
+# --- Специфика Android сборки (Gradle & Android Studio) ---
+android/.gradle/
+android/build/
+android/local.properties
+android/captures/
+android/*.iml
+android/.externalNativeBuild/
+android/.cxx/
+.navigation/
+captures/
+*.apk
+*.ap_
+*.dex
+*.class
+
+# --- Логи и отчеты об ошибках ---
+*.log

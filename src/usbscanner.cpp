@@ -2,7 +2,6 @@
 
 #include <QCoreApplication>
 #include <QJniEnvironment>
-#include <QNativeInterface>
 
 namespace {
 constexpr int UsbEndpointXferControl = 0;
