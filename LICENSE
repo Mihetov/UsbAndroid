@@ -1,0 +1,61 @@
+CONSTRUCTIVE AND PROPRIETARY SOFTWARE LICENSE AGREEMENT
+======================================================
+
+Copyright (c) 2026 Arthur Mihetov (https://github.com/Mihetov). 
+All rights reserved.
+
+This software, including its source code, build scripts (CMake), JNI integration 
+layers, and compiled binaries (excluding the third-party components specified below), 
+is the sole intellectual property of Arthur Mihetov.
+
+By using, viewing, or accessing this software, you agree to the following terms:
+
+1. OWNERSHIP
+   All title, ownership rights, and intellectual property rights in and to the 
+   software (including but not limited to any source code, C++ classes, Java 
+   bridging classes, and CMake configurations) remain solely with Arthur Mihetov.
+
+2. RESTRICTIONS
+   You are STRICTLY PROHIBITED from:
+   - Copying, modifying, merging, publishing, distributing, or sublicensing the 
+     source code of this software.
+   - Decompiling, reverse engineering, or disassembling the compiled binaries 
+     associated with this software.
+   - Creating derivative works based upon the source code of this software 
+     without prior written permission from the Author.
+
+3. LIMITED USE FOR CORPORATE EMPLOYER
+   The author's current employer is granted a limited, non-exclusive, non-transferable, 
+   royalty-free right to use the compiled binaries (.dll, .so, .aar files) of this 
+   software strictly for incorporation into the company's internal projects. 
+   This right does NOT include the right to access, modify, or distribute the 
+   underlying source code.
+
+4. WARRANTY DISCLAIMER
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+   SOFTWARE.
+
+
+================================================================================
+THIRD-PARTY COMPONENTS AND OPEN-SOURCE COMPLIANCE
+================================================================================
+
+This software includes, bundles, or dynamically links against the following 
+third-party library:
+
+- usb-serial-for-android (https://github.com/mik3y/usb-serial-for-android)
+  Licensed under the GNU Lesser General Public License v2.1 (LGPL-2.1).
+
+LGPL-2.1 COMPLIANCE NOTICE:
+1. The source code of 'usb-serial-for-android' is NOT owned by Arthur Mihetov 
+   and is subject to its own license terms (LGPL-2.1).
+2. Consistent with LGPL-2.1 guidelines, this proprietary software dynamically 
+   interfaces with the library. Users of this software retain the right to 
+   independently modify, rebuild, or replace the 'usb-serial-for-android' 
+   library (usb-serial-for-android-v3.10.0.aar) and run the modified version 
+   with this software, provided the interface specifications remain compatible.
