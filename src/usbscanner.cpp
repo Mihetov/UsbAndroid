@@ -147,6 +147,54 @@ void UsbScanner::sendTestPacket(int row)
 #endif
 }
 
+bool UsbScanner::connectDevice(int row)
+{
+    if (row < 0 || row >= m_devices.size()) {
+        m_lastError = QStringLiteral("Устройство не выбрано");
+        setStatus(m_lastError);
+        return false;
+    }
+    m_selectedDeviceName = m_devices.at(row).deviceName;
+    m_lastError.clear();
+    setStatus(QStringLiteral("Выбрано устройство: %1").arg(m_selectedDeviceName));
+    return true;
+}
+
+bool UsbScanner::openPort(int baudRate, int stopBits, const QString &parity)
+{
+    if (m_selectedDeviceName.isEmpty()) {
+        m_lastError = QStringLiteral("Сначала выберите USB устройство");
+        setStatus(m_lastError);
+        return false;
+    }
+    if (stopBits != 1 || parity.toLower() != QStringLiteral("none")) {
+        m_lastError = QStringLiteral("Поддерживаются stop bits = 1 и parity = none");
+        setStatus(m_lastError);
+        return false;
+    }
+#ifdef Q_OS_ANDROID
+    const int result = QJniObject::callStaticMethod<jint>(
+        "org/qtproject/example/usbandroid/UsbSerialBridge",
+        "openPort",
+        "(Landroid/content/Context;Ljava/lang/String;I)I",
+        QNativeInterface::QAndroidApplication::context().object(),
+        QJniObject::fromString(m_selectedDeviceName).object<jstring>(),
+        baudRate);
+    if (result != 0) {
+        m_lastError = QStringLiteral("Ошибка открытия COM порта, код: %1").arg(result);
+        setStatus(m_lastError);
+        return false;
+    }
+#else
+    Q_UNUSED(baudRate)
+#endif
+    m_lastError.clear();
+    setStatus(QStringLiteral("Порт открыт: %1, 8N1").arg(baudRate));
+    return true;
+}
+
+QString UsbScanner::lastError() const { return m_lastError; }
+
 void UsbScanner::setStatus(const QString &status)
 {
     if (m_status == status) return;

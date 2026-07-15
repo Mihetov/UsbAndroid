@@ -13,6 +13,8 @@ qt_add_executable(appUsbAndroid
     src/main.cpp
     src/usbscanner.cpp
     src/usbscanner.h
+    src/deviceregistermodel.cpp
+    src/deviceregistermodel.h
 )
 
 qt_add_qml_module(appUsbAndroid
