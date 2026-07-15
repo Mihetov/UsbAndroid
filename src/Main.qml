@@ -31,7 +31,7 @@ ApplicationWindow {
 
     Connections {
         target: backend
-        function onPortOpened() { registerModel.markAllReading(); backend.readAll(effectiveSlaveId, registerModel.allReadableRequests()); page = 2 }
+        function onPortOpened() { registerModel.markAllReading(); /*backend.readAll(effectiveSlaveId, registerModel.allReadableRequests());*/ page = 2 }
         function onPortOpenFailed(errorText) { errorDialog.message = errorText; errorDialog.open() }
         function onOperationFinished(summary, ok) { reportDialog.message = summary; if (!ok) reportDialog.open() }
     }
