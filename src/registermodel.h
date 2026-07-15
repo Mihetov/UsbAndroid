@@ -79,6 +79,8 @@ public:
     Q_INVOKABLE QVariantList allFactoryWriteRequests() const;
     Q_INVOKABLE void applyFactoryDefaults();
     Q_INVOKABLE QVariantList singleReadRequest(int row);
+    Q_INVOKABLE void saveExternalModel(const QString &fileName, const QString &jsonContent);
+    Q_INVOKABLE bool downloadModelFromCloud(const QString &fileUrl, const QString &fileName);
 
 public slots:
     void applyReadResult(const QString &address, const QString &value, bool ok, const QString &errorMsg);

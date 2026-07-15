@@ -1,0 +1,49 @@
+{
+  "name": "Счетчик SDM120",
+  "registers": [
+    {
+      "address": "0x0000",
+      "mnemonic": "VOLTAGE",
+      "access": "R",
+      "bytes": 4,
+      "format": "Float",
+      "min": 0,
+      "max": 300,
+      "description": "Напряжение (В)",
+      "hint": "Текущее напряжение в сети"
+    },
+    {
+      "address": "0x0006",
+      "mnemonic": "CURRENT",
+      "access": "R",
+      "bytes": 4,
+      "format": "Float",
+      "min": 0,
+      "max": 100,
+      "description": "Ток (А)",
+      "hint": "Потребляемый ток"
+    },
+    {
+      "address": "0x0012",
+      "mnemonic": "POWER",
+      "access": "R",
+      "bytes": 4,
+      "format": "Float",
+      "min": 0,
+      "max": 20000,
+      "description": "Активная мощность (Вт)",
+      "hint": "Текущая нагрузка"
+    },
+    {
+      "address": "0xC000",
+      "mnemonic": "BAUD_RATE",
+      "access": "RWE",
+      "bytes": 2,
+      "format": "Word",
+      "min": 0,
+      "max": 4,
+      "description": "Скорость обмена (0=2400, 1=4800, 2=9600...)",
+      "factory": "2"
+    }
+  ]
+}

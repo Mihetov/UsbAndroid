@@ -7,7 +7,9 @@
 #include <QJsonObject>
 #include <QStandardPaths>
 #include <QStringList>
-
+#if defined(Q_OS_ANDROID)
+#include <QJniObject>
+#endif
 namespace {
 const char *builtInJson = R"JSON({"name":"Устройство №1","registers":[
 {"address":"0xF000","mnemonic":"HREG_slaveID","access":"RWE","bytes":2,"format":"Word","min":1,"max":247,"description":"Сетевой адрес","factory":"247"},
@@ -342,4 +344,53 @@ QVariantList RegisterModel::singleReadRequest(int row)
         out << requestFor(r, r.value);
     }
     return out;
+}
+void RegisterModel::saveExternalModel(const QString &fileName, const QString &jsonContent)
+{
+    // Оставляем для ручного сохранения, если пригодится
+    const QString dirPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/device-models";
+    QDir().mkpath(dirPath);
+    QFile file(dirPath + "/" + fileName);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << jsonContent;
+        file.close();
+        reloadModels();
+        emit deviceNameChanged();
+    }
+}
+
+// Новый метод для облачного скачивания через Java
+bool RegisterModel::downloadModelFromCloud(const QString &fileUrl, const QString &fileName)
+{
+#if defined(Q_OS_ANDROID)
+    const QString dirPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/device-models";
+    QDir().mkpath(dirPath);
+    QString savePath = dirPath + "/" + fileName;
+
+    // Вызываем статикметод Java через QJniObject
+    // Путь к классу: org/qtproject/example/appUsbAndroid/DeviceDownloader
+    QJniObject jUrl = QJniObject::fromString(fileUrl);
+    QJniObject jPath = QJniObject::fromString(savePath);
+
+    bool success = QJniObject::callStaticMethod<jboolean>(
+        "org/qtproject/example/appUsbAndroid/DeviceDownloader",
+        "downloadAndSave",
+        "(Ljava/lang/String;Ljava/lang/String;)Z",
+        jUrl.object<jstring>(),
+        jPath.object<jstring>()
+        );
+
+    if (success) {
+        // Перечитываем модели, чтобы устройство сразу появилось в UI
+        reloadModels();
+        emit deviceNameChanged();
+    }
+    return success;
+#else
+    // Заглушка для отладки на ПК (если захочешь протестировать под Windows/Linux)
+    Q_UNUSED(fileUrl);
+    Q_UNUSED(fileName);
+    return false;
+#endif
 }

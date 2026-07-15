@@ -14,6 +14,17 @@ ApplicationWindow {
     property string selectedDevicePath: ""
     property bool broadcastMode: ff.checked || fe.checked
     property int effectiveSlaveId: ff.checked ? 255 : (fe.checked ? 254 : slaveId)
+    function downloadDeviceModel(url, fileName) {
+        var success = registerModel.downloadModelFromCloud(url, fileName);
+
+        if (success) {
+            reportDialog.message = "Устройство успешно скачано и добавлено в базу!";
+            reportDialog.open();
+        } else {
+            errorDialog.message = "Ошибка при скачивании из облака. Проверьте интернет-соединение.";
+            errorDialog.open();
+        }
+    }
 
     Dialog { id: errorDialog; title: "Ошибка"; modal: true; standardButtons: Dialog.Ok; property alias message: msg.text; Label { id: msg; width: 320; wrapMode: Text.WordWrap } }
     Dialog { id: reportDialog; title: "Результат операции"; modal: true; standardButtons: Dialog.Ok; property alias message: report.text; width: 380; Label { id: report; width: parent ? parent.width : 0; wrapMode: Text.WordWrap } }
@@ -61,7 +72,8 @@ ApplicationWindow {
             ToolBar { Layout.fillWidth: true; RowLayout { anchors.fill: parent
                 Label { text: registerModel.deviceName; font.bold: true; Layout.fillWidth: true; elide: Text.ElideRight }
                 Button { text: backend.busy ? "Чтение..." : "Чтение"; enabled: !backend.busy && !broadcastMode; onClicked: backend.readAll(effectiveSlaveId, registerModel.allReadableRequests()) }
-                ToolButton { text: "⋮"; enabled: !backend.busy; onClicked: tools.open(); Menu { id: tools; MenuItem { text: "Записать все"; onTriggered: backend.writeSelected(effectiveSlaveId, registerModel.allWriteRequests()) } MenuItem { text: "Заводской режим"; onTriggered: { registerModel.applyFactoryDefaults(); backend.writeFactoryDefaults(effectiveSlaveId, registerModel.allFactoryWriteRequests()) } } } }
+                ToolButton { text: "⋮"; enabled: !backend.busy; onClicked: tools.open(); Menu { id: tools; MenuItem { text: "Записать все"; onTriggered: backend.writeSelected(effectiveSlaveId, registerModel.allWriteRequests()) } MenuItem { text: "Заводской режим"; onTriggered: { registerModel.applyFactoryDefaults(); backend.writeFactoryDefaults(effectiveSlaveId, registerModel.allFactoryWriteRequests()) } } MenuItem { text: "Обновить из облака"; onTriggered: {downloadDeviceModel("https://raw.githubusercontent.com/Mihetov/UsbAndroid/main/models/sdm120.json", "sdm120.json")}
+                        } } }
             } }
             RowLayout { Layout.fillWidth: true; Layout.margins: 8
                 Label { text: "Модель" }
