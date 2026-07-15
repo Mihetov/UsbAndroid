@@ -1,19 +1,36 @@
 # UsbAndroid
 
-Qt 6 / CMake Android application for scanning USB OTG devices and sending a test Modbus RTU packet to USB-serial adapters such as CH340.
+Qt/QML Android-приложение для выбора USB OTG устройства и конфигурирования Modbus-регистров через USB Serial.
 
-## Features
+## Modbus RTU backend
 
-- Scans USB Host devices connected to an Android phone over OTG on startup and by pressing **Сканировать USB**.
-- Shows device path, device class, vendor ID, product ID, product name, interfaces, and endpoint data.
-- Sends a Modbus RTU test frame through `usb-serial-for-android` instead of custom USB-serial driver code:
-  - slave address: `1`
-  - function: `0x06` (write single holding register)
-  - register: `0xF000`
-  - value: `26`
-  - serial parameters: `9600 8N1`
-  - CRC16 Modbus appended low byte first
+C++ backend использует отдельный `QThread`: QML только ставит операции чтения/записи в очередь сигналов, а USB/Modbus-транзакции выполняются в worker-потоке. RTU-кадры формируются через `Mazurel/Modbus`, CRC проверяется через `ModbusResponse::fromRawCRC`, exception response переводится в текст ошибки и прокидывается в модель регистра как `status = "device_error"` и `error_msg`.
 
-## Build
+Android-транспорт находится в `Backend` и ходит в `UsbSerialBridge.openPort/write/read` через JNI. Для 115200 8N1 считается silent interval t3.5; перед и после транзакции выдерживается межкадровая пауза.
 
-Open this folder as a Qt 6 CMake project and use an Android kit. The Android package source is `android_backup/`; it adds the JitPack repository and the `com.github.mik3y:usb-serial-for-android:3.10.0` dependency.
+## Динамические модели устройств
+
+В приложение встроена модель `Устройство №1`. Дополнительные модели можно добавлять JSON-файлами в каталог данных приложения `device-models`.
+
+Формат файла:
+
+```json
+{
+  "name": "Название устройства",
+  "registers": [
+    {
+      "address": "0xF000",
+      "mnemonic": "HREG_slaveID",
+      "access": "RWE",
+      "bytes": 2,
+      "format": "Word",
+      "min": 1,
+      "max": 247,
+      "description": "Сетевой адрес",
+      "factory": "247"
+    }
+  ]
+}
+```
+
+Поля `access` используют флаги `R` (чтение), `W` (запись), `E` (энергонезависимая память/заводские значения). При запуске приложения встроенная модель и все JSON-модели из каталога данных подгружаются в выпадающий список моделей.

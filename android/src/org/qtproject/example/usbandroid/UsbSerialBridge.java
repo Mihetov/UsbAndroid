@@ -34,6 +34,48 @@ public final class UsbSerialBridge {
     private UsbSerialBridge() {
     }
 
+
+    public static synchronized int openPort(Context context, String deviceName, int baudRate) {
+        if (mPort != null && mPort.isOpen() && mCurrentDeviceName.equals(deviceName)) {
+            return 0;
+        }
+
+        UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        if (manager == null) {
+            return -100;
+        }
+
+        List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
+        for (UsbSerialDriver driver : drivers) {
+            UsbDevice device = driver.getDevice();
+            if (!device.getDeviceName().equals(deviceName)) {
+                continue;
+            }
+            if (!manager.hasPermission(device)) {
+                requestPermission(context, manager, device, baudRate);
+                return -101;
+            }
+
+            mConnection = manager.openDevice(device);
+            if (mConnection == null) {
+                return -102;
+            }
+
+            try {
+                mPort = driver.getPorts().get(0);
+                mPort.open(mConnection);
+                mPort.setParameters(baudRate, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+                mCurrentDeviceName = deviceName;
+                return 0;
+            } catch (IOException | RuntimeException e) {
+                Log.e(TAG, "Serial driver open failed: " + e.getMessage());
+                close();
+                return -103;
+            }
+        }
+        return -104;
+    }
+
     // =========================================================================
     // 1. Умный метод write (Сохраняет оригинальную сигнатуру для совместимости с C++)
     // =========================================================================
