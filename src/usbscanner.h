@@ -62,6 +62,9 @@ public:
 
     Q_INVOKABLE void scan();
     Q_INVOKABLE void sendTestPacket(int row);
+    Q_INVOKABLE bool connectDevice(int row);
+    Q_INVOKABLE bool openPort(int baudRate, int stopBits, const QString &parity);
+    Q_INVOKABLE QString lastError() const;
 
 signals:
     void statusChanged();
@@ -76,4 +79,6 @@ private:
 
     QList<UsbDeviceInfo> m_devices;
     QString m_status;
+    QString m_selectedDeviceName;
+    QString m_lastError;
 };
