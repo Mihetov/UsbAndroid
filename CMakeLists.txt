@@ -7,14 +7,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Quick)
 
+include(FetchContent)
+set(MODBUS_COMMUNICATION OFF CACHE BOOL "Disable Mazurel/Modbus Linux communication backend" FORCE)
+FetchContent_Declare(
+    MazurelModbus
+    GIT_REPOSITORY https://github.com/Mazurel/Modbus.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(MazurelModbus)
+
 qt_standard_project_setup(REQUIRES 6.5)
 
 qt_add_executable(appUsbAndroid
     src/main.cpp
     src/usbscanner.cpp
     src/usbscanner.h
-    src/deviceregistermodel.cpp
-    src/deviceregistermodel.h
+    src/backend.cpp
+    src/backend.h
+    src/registermodel.cpp
+    src/registermodel.h
 )
 
 qt_add_qml_module(appUsbAndroid
@@ -29,7 +40,7 @@ set_target_properties(appUsbAndroid PROPERTIES
 )
 
 target_link_libraries(appUsbAndroid
-    PRIVATE Qt6::Core Qt6::Quick
+    PRIVATE Qt6::Core Qt6::Quick Modbus
 )
 
 include(GNUInstallDirs)

@@ -2,6 +2,12 @@
 
 Qt/QML Android-приложение для выбора USB OTG устройства и конфигурирования Modbus-регистров через USB Serial.
 
+## Modbus RTU backend
+
+C++ backend использует отдельный `QThread`: QML только ставит операции чтения/записи в очередь сигналов, а USB/Modbus-транзакции выполняются в worker-потоке. RTU-кадры формируются через `Mazurel/Modbus`, CRC проверяется через `ModbusResponse::fromRawCRC`, exception response переводится в текст ошибки и прокидывается в модель регистра как `status = "device_error"` и `error_msg`.
+
+Android-транспорт находится в `Backend` и ходит в `UsbSerialBridge.openPort/write/read` через JNI. Для 115200 8N1 считается silent interval t3.5; перед и после транзакции выдерживается межкадровая пауза.
+
 ## Динамические модели устройств
 
 В приложение встроена модель `Устройство №1`. Дополнительные модели можно добавлять JSON-файлами в каталог данных приложения `device-models`.
