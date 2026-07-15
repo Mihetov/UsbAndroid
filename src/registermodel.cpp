@@ -325,3 +325,21 @@ bool RegisterModel::isValidValue(const RegisterEntry &r, QString *hint) const
 
 bool RegisterModel::isIntegerFormat(const QString &format) { return format.contains("Int") || format == "Word" || format == "Byte"; }
 void RegisterModel::emitRowChanged(int row) { emit dataChanged(index(row), index(row)); }
+QVariantList RegisterModel::singleReadRequest(int row)
+{
+    QVariantList out;
+    if (row < 0 || row >= m_registers.size()) return out;
+
+    auto &r = m_registers[row];
+    if (r.access.contains(u'R')) {
+        // Меняем статус на "чтение...", чтобы интерфейс показал спиннер/загрузку
+        r.status = QStringLiteral("reading");
+        r.errorMsg.clear();
+        emitRowChanged(row);
+        emit stateChanged();
+
+        // Формируем запрос на чтение конкретно этого регистра
+        out << requestFor(r, r.value);
+    }
+    return out;
+}

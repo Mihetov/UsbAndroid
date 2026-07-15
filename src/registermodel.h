@@ -78,6 +78,7 @@ public:
     Q_INVOKABLE QVariantList allWriteRequests() const;
     Q_INVOKABLE QVariantList allFactoryWriteRequests() const;
     Q_INVOKABLE void applyFactoryDefaults();
+    Q_INVOKABLE QVariantList singleReadRequest(int row);
 
 public slots:
     void applyReadResult(const QString &address, const QString &value, bool ok, const QString &errorMsg);

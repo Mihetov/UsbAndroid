@@ -16,7 +16,7 @@ ApplicationWindow {
     property int effectiveSlaveId: ff.checked ? 255 : (fe.checked ? 254 : slaveId)
 
     Dialog { id: errorDialog; title: "Ошибка"; modal: true; standardButtons: Dialog.Ok; property alias message: msg.text; Label { id: msg; width: 320; wrapMode: Text.WordWrap } }
-    Dialog { id: reportDialog; title: "Результат операции"; modal: true; standardButtons: Dialog.Ok; property alias message: report.text; Label { id: report; width: 340; wrapMode: Text.WordWrap } }
+    Dialog { id: reportDialog; title: "Результат операции"; modal: true; standardButtons: Dialog.Ok; property alias message: report.text; width: 380; Label { id: report; width: parent ? parent.width : 0; wrapMode: Text.WordWrap } }
 
     Connections {
         target: backend
@@ -82,7 +82,11 @@ ApplicationWindow {
                             TextField { text: model.value; enabled: model.writable && !backend.busy; Layout.preferredWidth: 120; placeholderText: model.format; onEditingFinished: registerModel.setValue(index, text) }
                         }
                         Label { visible: !model.valid || model.error_msg.length > 0; text: model.error_msg.length > 0 ? model.error_msg : model.hint; color: "#a00000"; Layout.fillWidth: true; wrapMode: Text.WordWrap }
-                        Label { visible: model.expanded; text: "Адрес: " + model.address + "\nМнемоника: " + model.mnemonic + "\nТип: " + model.access + ", байт: " + model.bytes + "\nФормат: " + model.format + ", мин: " + model.minimum + ", макс: " + model.maximum + (model.error_msg ? "\nОшибка Modbus: " + model.error_msg : ""); Layout.fillWidth: true; wrapMode: Text.WordWrap; font.family: "monospace" }
+                        ColumnLayout { visible: model.expanded ; Layout.fillWidth: true ; spacing: 8;
+                            Label { visible: model.expanded; text: "Адрес: " + model.address + "\nМнемоника: " + model.mnemonic + "\nТип: " + model.access + ", байт: " + model.bytes + "\nФормат: " + model.format + ", мин: " + model.minimum + ", макс: " + model.maximum + (model.error_msg ? "\nОшибка Modbus: " + model.error_msg : ""); Layout.fillWidth: true; wrapMode: Text.WordWrap; font.family: "monospace" }
+                            Button { text: "Прочитать" ; Layout.fillWidth: true ; enabled: model.access.indexOf('R') !== -1 && !backend.busy && !broadcastMode; onClicked: {var singleReq = registerModel.singleReadRequest(index); if (singleReq.length > 0) backend.readAll(effectiveSlaveId, singleReq)}
+                            }
+                        }
                     }
                 }
             }

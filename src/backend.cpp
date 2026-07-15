@@ -1,5 +1,10 @@
 #include "backend.h"
-
+#ifdef Q_OS_ANDROID
+#include <QCoreApplication>
+#include <QJniObject>
+// Добавляем системный хедер интерфейсов Android для Qt6
+#include <qnativeinterface.h>
+#endif
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QJniEnvironment>
@@ -8,6 +13,7 @@
 #include <QMutexLocker>
 #include <QThread>
 #include <QVariantMap>
+#include <QDebug>
 
 #include <algorithm>
 #include <cmath>
@@ -73,7 +79,7 @@ QString decodeRegisters(const QByteArray &response, const QString &format, int b
 {
     if (response.size() < 5) return {};
     const int byteCount = static_cast<quint8>(response.at(2));
-    const QByteArray payload = response.mid(3, std::min(byteCount, response.size() - 5));
+    const QByteArray payload = response.mid(3, std::min(static_cast<qsizetype>(byteCount), response.size() - 5));
     if (format == "String" || format == "TCP56" || format == "Array") return QString::fromLatin1(payload.toHex(' ').toUpper());
     if (payload.size() >= 4 && (format == "Int32" || format == "Float")) {
         quint32 raw = (quint8(payload[0]) << 24) | (quint8(payload[1]) << 16) | (quint8(payload[2]) << 8) | quint8(payload[3]);
@@ -119,11 +125,19 @@ public:
     bool open(const QString &deviceName, int baudRate, QString *error)
     {
 #ifdef Q_OS_ANDROID
+        auto *androidApp = qApp->nativeInterface<QNativeInterface::QAndroidApplication>();
+        if (!androidApp) {
+            *error = QStringLiteral("Failed to get QAndroidApplication interface");
+            return false;
+        }
+        // ИСПРАВЛЕНО: Используем QJniObject вместо jobject
+        QJniObject context = androidApp->context();
+
         const int result = QJniObject::callStaticMethod<jint>(
             "org/qtproject/example/usbandroid/UsbSerialBridge",
             "openPort",
             "(Landroid/content/Context;Ljava/lang/String;I)I",
-            QNativeInterface::QAndroidApplication::context().object(),
+            context.object(), // ИСПРАВЛЕНО: Передаем сырой jobject через .object()
             QJniObject::fromString(deviceName).object<jstring>(),
             baudRate);
         if (result != 0) { *error = QStringLiteral("USB openPort failed, code %1").arg(result); return false; }
@@ -142,24 +156,49 @@ public:
         QMutexLocker locker(&m_mutex);
         QThread::msleep(m_t35Ms);
 #ifdef Q_OS_ANDROID
+        // ВЫВОД ЗАПРОСА В ЛОГ (в верхнем регистре через пробелы)
+        qDebug().noquote() << "--> MODBUS TX:" << request.toHex(' ').toUpper();
+
         QJniEnvironment env;
         jbyteArray bytes = env->NewByteArray(request.size());
         env->SetByteArrayRegion(bytes, 0, request.size(), reinterpret_cast<const jbyte *>(request.constData()));
+
+        auto *androidApp = qApp->nativeInterface<QNativeInterface::QAndroidApplication>();
+        if (!androidApp) {
+            *error = QStringLiteral("Failed to get QAndroidApplication interface");
+            env->DeleteLocalRef(bytes);
+            return {};
+        }
+        QJniObject context = androidApp->context();
+
         const int written = QJniObject::callStaticMethod<jint>(
             "org/qtproject/example/usbandroid/UsbSerialBridge",
             "write",
             "(Landroid/content/Context;Ljava/lang/String;[BI)I",
-            QNativeInterface::QAndroidApplication::context().object(),
+            context.object(),
             QJniObject::fromString(m_deviceName).object<jstring>(),
             bytes,
             m_baudRate);
         env->DeleteLocalRef(bytes);
-        if (written != request.size()) { *error = QStringLiteral("USB write failed, code %1").arg(written); return {}; }
+        if (written != request.size()) {
+            *error = QStringLiteral("USB write failed, code %1").arg(written);
+            qDebug() << "!!! WRITE ERROR:" << *error;
+            return {};
+        }
+
         QByteArray response;
         QElapsedTimer timer; timer.start();
         while (timer.elapsed() < DefaultTimeoutMs) {
-            QJniObject data = QJniObject::callStaticObjectMethod("org/qtproject/example/usbandroid/UsbSerialBridge", "read", "(II)[B", 256, 80);
-            jbyteArray arr = data.object<jbyteArray>();
+            QJniObject data = QJniObject::callStaticObjectMethod(
+                "org/qtproject/example/usbandroid/UsbSerialBridge",
+                "read",
+                "(II)[B",
+                256,
+                80
+                );
+
+            jbyteArray arr = static_cast<jbyteArray>(data.object());
+
             if (arr) {
                 const jsize len = env->GetArrayLength(arr);
                 if (len > 0) {
@@ -170,7 +209,17 @@ public:
                 }
             }
         }
-        if (response.isEmpty()) { *error = QStringLiteral("Modbus timeout after %1 ms").arg(DefaultTimeoutMs); return {}; }
+
+        if (response.isEmpty()) {
+            *error = QStringLiteral("Modbus timeout after %1 ms").arg(DefaultTimeoutMs);
+            // ЛОГИРУЕМ ТАЙМАУТ
+            qDebug() << "Requested" << expectedMinSize << "bytes, but got absolute silence. TX/RX mismatch?";
+            return {};
+        }
+
+        // ВЫВОД ОТВЕТА В ЛОГ
+        qDebug().noquote() << "<-- MODBUS RX:" << response.toHex(' ').toUpper();
+
         QThread::msleep(m_t35Ms);
         return response;
 #else
